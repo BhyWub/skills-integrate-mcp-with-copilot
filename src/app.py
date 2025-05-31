@@ -77,6 +77,9 @@ activities = {
     }
 }
 
+# In-memory student database
+students = {}
+
 
 @app.get("/")
 def root():
@@ -89,8 +92,8 @@ def get_activities():
 
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
+def signup_for_activity(activity_name: str, email: str, name: str, grade: str):
+    """Sign up a student for an activity, with registration details"""
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -105,9 +108,20 @@ def signup_for_activity(activity_name: str, email: str):
             detail="Student is already signed up"
         )
 
-    # Add student
+    # Register student if not already in students db
+    if email not in students:
+        students[email] = {"name": name, "grade": grade, "activities": []}
+    students[email]["activities"].append(activity_name)
+
+    # Add student to activity
     activity["participants"].append(email)
     return {"message": f"Signed up {email} for {activity_name}"}
+
+
+@app.get("/students")
+def get_students():
+    """Get all registered students and their activities"""
+    return students
 
 
 @app.delete("/activities/{activity_name}/unregister")
